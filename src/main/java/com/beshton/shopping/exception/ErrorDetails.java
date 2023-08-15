@@ -1,39 +1,35 @@
 package com.beshton.shopping.exception;
 
-import org.springframework.cglib.core.Local;
-
-import java.time.LocalDateTime;
 import java.util.Date;
 
 public class ErrorDetails {
-    private final LocalDateTime timestamp;
-    private final String message;
-    private final String details;
+    private Date timestamp;
+    private String message;
+    private String details;
 
-    public ErrorDetails(LocalDateTime timestamp, String message, String details) {
+    public ErrorDetails(Date timestamp, String message, String details) {
+        super();
         this.timestamp = timestamp;
         this.message = message;
         this.details = details;
     }
 
-    public LocalDateTime getTimestamp() {
+    public Date getTimestamp() {
         return timestamp;
     }
-
+    public void setTimestamp(Date timestamp) {
+        this.timestamp = timestamp;
+    }
     public String getMessage() {
         return message;
     }
-
+    public void setMessage(String message) {
+        this.message = message;
+    }
     public String getDetails() {
         return details;
     }
-
-    @Override
-    public String toString() {
-        return "ErrorDetails{" +
-                "timestamp=" + timestamp +
-                ", message='" + message + '\'' +
-                ", details='" + details + '\'' +
-                '}';
+    public void setDetails(String details) {
+        this.details = details;
     }
 }
