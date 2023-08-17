@@ -18,6 +18,8 @@ import java.util.Objects;
 @Table(name = "products")
 @EntityListeners(AuditingEntityListener.class)
 public class Product {
+    private static final Product EMPTY_PRODUCT = new Product();
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -127,6 +129,10 @@ public class Product {
     public Product setUpdatedBy(String updatedBy) {
         this.updatedBy = updatedBy;
         return this;
+    }
+
+    public static Product emptyProduct() {
+        return EMPTY_PRODUCT;
     }
 
     @Override
