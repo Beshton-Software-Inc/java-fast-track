@@ -11,6 +11,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.*;
 
 import java.math.BigDecimal;
@@ -91,25 +93,34 @@ class ProductsTests {
         Product product = createPhoneProduct();
 
         // Send a HTTP POST request
-        ResponseEntity<Product> postResponse = restTemplate.postForEntity(productsURL(), product, Product.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Product> requestEntity = new HttpEntity<>(product, headers);
+        ResponseEntity<EntityModel<Product>> postResponse = restTemplate.exchange(
+                productsURL(), HttpMethod.POST, requestEntity, new ParameterizedTypeReference<>() {});
 
         // Assert that the response status is CREATED
         assertEquals(HttpStatus.CREATED, postResponse.getStatusCode());
 
-        // Assert that the returned product matches what was sent
-        Product createdProduct = postResponse.getBody();
-        assertNotNull(createdProduct);
-        assertEquals(product.getProductName(), createdProduct.getProductName());
-        assertEquals(product.getDescription(), createdProduct.getDescription());
-        assertEquals(product.getPrice(), createdProduct.getPrice());
-        assertEquals(product.getQuantity(), createdProduct.getQuantity());
-        assertEquals(product.getCreatedBy(), createdProduct.getCreatedBy());
-        assertEquals(product.getUpdatedBy(), createdProduct.getUpdatedBy());
+        // Assert that the returned resource matches what was sent
+        EntityModel<Product> returnedResource = postResponse.getBody();
+        assertNotNull(returnedResource);
+        assertNotNull(returnedResource.getContent());
+        assertEquals(product.getProductName(), returnedResource.getContent().getProductName());
+        assertEquals(product.getDescription(), returnedResource.getContent().getDescription());
+        assertEquals(product.getPrice(), returnedResource.getContent().getPrice());
+        assertEquals(product.getQuantity(), returnedResource.getContent().getQuantity());
+        assertEquals(product.getCreatedBy(), returnedResource.getContent().getCreatedBy());
+        assertEquals(product.getUpdatedBy(), returnedResource.getContent().getUpdatedBy());
 
         // Assert that the server-generated ID and dates are not null
-        assertNotNull(createdProduct.getId());
-        assertNotNull(createdProduct.getCreatedAt());
-        assertNotNull(createdProduct.getUpdatedAt());
+        assertNotNull(returnedResource.getContent().getId());
+        assertNotNull(returnedResource.getContent().getCreatedAt());
+        assertNotNull(returnedResource.getContent().getUpdatedAt());
+
+        // Assert that the response includes links
+        assertNotNull(returnedResource.getLinks());
+        assertFalse(returnedResource.getLinks().isEmpty());
     }
 
     @Test
@@ -122,11 +133,17 @@ class ProductsTests {
 
         // Send a HTTP GET request
         String getRequestURL = productsURL() + "/" + id;
-        ResponseEntity<Product> getResponse = restTemplate.getForEntity(getRequestURL, Product.class);
+        ResponseEntity<EntityModel<Product>> getResponse = restTemplate.exchange(
+                getRequestURL, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
 
         // Assert that the response is as expected
         assertEquals(HttpStatus.OK, getResponse.getStatusCode());
-        assertEquals(persistedProduct, getResponse.getBody());
+        assertNotNull(getResponse.getBody());
+        assertNotNull(getResponse.getBody());
+        assertNotNull(getResponse.getBody().getContent());
+        assertEquals(persistedProduct, getResponse.getBody().getContent());
+        assertNotNull(getResponse.getBody().getLinks());
+        assertFalse(getResponse.getBody().getLinks().isEmpty());
 
         // Try an erroneous id
         String errorURL = productsURL() + "/" + 100;
@@ -138,10 +155,13 @@ class ProductsTests {
     @Test
     public void testGetAllProducts() {
         // Try on empty database
-        ResponseEntity<List<Product>> emptyGetResponse = restTemplate.exchange(
+        ResponseEntity<CollectionModel<EntityModel<Product>>> emptyGetResponse = restTemplate.exchange(
                 productsURL(), HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
         assertEquals(HttpStatus.OK, emptyGetResponse.getStatusCode());
-        assertEquals(Collections.emptyList(), emptyGetResponse.getBody());
+        assertNotNull(emptyGetResponse.getBody());
+        assertTrue(emptyGetResponse.getBody().getContent().isEmpty());
+        assertNotNull(emptyGetResponse.getBody().getLinks());
+        assertFalse(emptyGetResponse.getBody().getLinks().isEmpty());
 
         // persist a list of products
         productRepository.save(createPhoneProduct());
@@ -150,10 +170,13 @@ class ProductsTests {
         List<Product> allPersistedProducts = productRepository.findAll();
 
         // Send a HTTP GET request
-        ResponseEntity<List<Product>> getResponse = restTemplate.exchange(
+        ResponseEntity<CollectionModel<EntityModel<Product>>> getResponse = restTemplate.exchange(
                 productsURL(), HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
         assertEquals(HttpStatus.OK, getResponse.getStatusCode());
-        assertEquals(allPersistedProducts, getResponse.getBody());
+        assertNotNull(getResponse.getBody());
+        assertEquals(allPersistedProducts.size(), getResponse.getBody().getContent().size());
+        assertNotNull(getResponse.getBody().getLinks());
+        assertFalse(getResponse.getBody().getLinks().isEmpty());
     }
 
     @Test
@@ -163,17 +186,21 @@ class ProductsTests {
         String queryURL = productsURL() + "/search?query=" + query;
 
         // Try on empty database
-        ResponseEntity<List<Product>> emptyGetResponse = restTemplate.exchange(
+        ResponseEntity<CollectionModel<EntityModel<Product>>> emptyGetResponse = restTemplate.exchange(
                 queryURL, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
         assertEquals(HttpStatus.OK, emptyGetResponse.getStatusCode());
-        assertEquals(Collections.emptyList(), emptyGetResponse.getBody());
+        assertNotNull(emptyGetResponse.getBody());
+        assertNotNull(emptyGetResponse.getBody().getContent());
+        assertTrue(emptyGetResponse.getBody().getContent().isEmpty());
+        assertNotNull(emptyGetResponse.getBody().getLinks());
+        assertFalse(emptyGetResponse.getBody().getLinks().isEmpty());
 
         // persist a list of products
         productRepository.save(createPhoneProduct());
         productRepository.save(createDesktopComputerProduct());
         productRepository.save(createLaptopComputerProduct());
 
-        // first, validate query result of repository
+        // validate query result of repository
         List<Product> queryResult = productRepository.findByProductNameContainingIgnoreCase(query);
         assertNotNull(queryResult);
         assertEquals(2, queryResult.size());
@@ -182,10 +209,14 @@ class ProductsTests {
         assertNotEquals(queryResult.get(0).getId(), queryResult.get(1).getId());
 
         // search for computer on populated db
-        ResponseEntity<List<Product>> getResponse = restTemplate.exchange(
+        ResponseEntity<CollectionModel<EntityModel<Product>>> getResponse = restTemplate.exchange(
                 queryURL, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
         assertEquals(HttpStatus.OK, getResponse.getStatusCode());
-        assertEquals(queryResult, getResponse.getBody());
+        assertNotNull(getResponse.getBody());
+        assertNotNull(getResponse.getBody().getContent());
+        assertEquals(queryResult.size(), getResponse.getBody().getContent().size());
+        assertNotNull(getResponse.getBody().getLinks());
+        assertFalse(getResponse.getBody().getLinks().isEmpty());
     }
 
     @Test
@@ -194,28 +225,29 @@ class ProductsTests {
         Product laptopComputer = createLaptopComputerProduct();
         HttpEntity<Product> requestEntity = new HttpEntity<>(laptopComputer, new HttpHeaders());
         String requestURL = productsURL() + "/" + desktopComputer.getId();
-        ResponseEntity<Product> putResponse = restTemplate.exchange(
-                requestURL, HttpMethod.PUT, requestEntity, Product.class
-        );
+        ResponseEntity<EntityModel<Product>> putResponse = restTemplate.exchange(
+                requestURL, HttpMethod.PUT, requestEntity, new ParameterizedTypeReference<>() {});
         // response code should be OK
         assertEquals(HttpStatus.OK, putResponse.getStatusCode());
 
-        // response body should be non-null product
-        Product updatedProduct = putResponse.getBody();
-        assertNotNull(updatedProduct);
+        // response body should be non-null resource containing a product and links
+        assertNotNull(putResponse.getBody());
+        assertNotNull(putResponse.getBody().getContent());
+        assertNotNull(putResponse.getBody().getLinks());
+        assertFalse(putResponse.getBody().getLinks().isEmpty());
 
         // id, created date, and created by should not change from the old product, updated date should change
-        assertEquals(desktopComputer.getId(), updatedProduct.getId());
-        assertEquals(desktopComputer.getCreatedAt(), updatedProduct.getCreatedAt());
-        assertEquals(desktopComputer.getCreatedBy(), updatedProduct.getCreatedBy());
-        assertNotEquals(desktopComputer.getUpdatedAt(), updatedProduct.getUpdatedAt());
+        assertEquals(desktopComputer.getId(), putResponse.getBody().getContent().getId());
+        assertEquals(desktopComputer.getCreatedAt(), putResponse.getBody().getContent().getCreatedAt());
+        assertEquals(desktopComputer.getCreatedBy(), putResponse.getBody().getContent().getCreatedBy());
+        assertNotEquals(desktopComputer.getUpdatedAt(), putResponse.getBody().getContent().getUpdatedAt());
 
         // other attributes should equal to the newly created product
-        assertEquals(laptopComputer.getProductName(), updatedProduct.getProductName());
-        assertEquals(laptopComputer.getDescription(), updatedProduct.getDescription());
-        assertEquals(laptopComputer.getPrice(), updatedProduct.getPrice());
-        assertEquals(laptopComputer.getQuantity(), updatedProduct.getQuantity());
-        assertEquals(laptopComputer.getUpdatedBy(), updatedProduct.getUpdatedBy());
+        assertEquals(laptopComputer.getProductName(), putResponse.getBody().getContent().getProductName());
+        assertEquals(laptopComputer.getDescription(), putResponse.getBody().getContent().getDescription());
+        assertEquals(laptopComputer.getPrice(), putResponse.getBody().getContent().getPrice());
+        assertEquals(laptopComputer.getQuantity(), putResponse.getBody().getContent().getQuantity());
+        assertEquals(laptopComputer.getUpdatedBy(), putResponse.getBody().getContent().getUpdatedBy());
 
         // Try an erroneous id
         String requestUpdateNotFoundProduct = productsURL() + "/" + (desktopComputer.getId() + 1);
@@ -228,16 +260,16 @@ class ProductsTests {
 
     @Test
     public void testDeleteProduct() {
-        Product phoneProuct = productRepository.save(createPhoneProduct());
+        Product phoneProduct = productRepository.save(createPhoneProduct());
 
         // delete an existing product
-        String requestURL = productsURL() + "/" + phoneProuct.getId();
+        String requestURL = productsURL() + "/" + phoneProduct.getId();
         ResponseEntity<Map<String, Boolean>> deleteResponse = restTemplate.exchange(
                 requestURL, HttpMethod.DELETE, null, new ParameterizedTypeReference<>() {});
         assertEquals(HttpStatus.OK, deleteResponse.getStatusCode());
         assertNotNull(deleteResponse.getBody());
         assertEquals(Collections.singletonMap("deleted", Boolean.TRUE), deleteResponse.getBody());
-        assertFalse(productRepository.existsById(phoneProuct.getId()));
+        assertFalse(productRepository.existsById(phoneProduct.getId()));
 
         // the deleted product should not be found
         ResponseEntity<String> deleteNotFoundResponse = restTemplate.exchange(
