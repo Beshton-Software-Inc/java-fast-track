@@ -11,9 +11,14 @@ pipeline {
                 sh './mvnw clean install'
             }
         }
-        stage('Deploy') {
+        stage('Build Docker Image') {
             steps {
-                sh './mvnw spring-boot:run'
+                sh 'docker build -t springboot-shopping .'
+            }
+        }
+        stage('Run Docker Container') {
+            steps {
+                sh 'docker run -p 8080:8080 -d springboot-shopping'
             }
         }
     }
