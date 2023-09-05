@@ -12,6 +12,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
 @Entity
@@ -154,8 +155,10 @@ public class Product {
         if (!Objects.equals(description, product.description)) return false;
         if (!Objects.equals(price, product.price)) return false;
         if (!Objects.equals(quantity, product.quantity)) return false;
-        if (!Objects.equals(createdAt, product.createdAt)) return false;
-        if (!Objects.equals(updatedAt, product.updatedAt)) return false;
+        if (!Objects.equals(createdAt.truncatedTo(ChronoUnit.MILLIS),
+                            product.createdAt.truncatedTo(ChronoUnit.MILLIS))) return false;
+        if (!Objects.equals(updatedAt.truncatedTo(ChronoUnit.MILLIS),
+                            product.updatedAt.truncatedTo(ChronoUnit.MILLIS))) return false;
         if (!Objects.equals(createdBy, product.createdBy)) return false;
         return Objects.equals(updatedBy, product.updatedBy);
     }
