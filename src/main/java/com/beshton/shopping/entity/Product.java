@@ -95,19 +95,31 @@ public class Product {
     }
 
     public LocalDateTime getCreatedAt() {
-        return createdAt;
+        if (createdAt == null) {
+            return null;
+        }
+        return createdAt.truncatedTo(ChronoUnit.MILLIS);
     }
 
     public Product setCreatedAt(LocalDateTime createdAt) {
+        if (createdAt != null) {
+            createdAt = createdAt.truncatedTo(ChronoUnit.MILLIS);
+        }
         this.createdAt = createdAt;
         return this;
     }
 
     public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+        if (updatedAt == null) {
+            return null;
+        }
+        return updatedAt.truncatedTo(ChronoUnit.MILLIS);
     }
 
     public Product setUpdatedAt(LocalDateTime updatedAt) {
+        if (updatedAt != null) {
+            updatedAt = updatedAt.truncatedTo(ChronoUnit.MILLIS);
+        }
         this.updatedAt = updatedAt;
         return this;
     }
@@ -149,18 +161,15 @@ public class Product {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Product product)) return false;
-
-        if (!Objects.equals(id, product.id)) return false;
-        if (!Objects.equals(productName, product.productName)) return false;
-        if (!Objects.equals(description, product.description)) return false;
-        if (!Objects.equals(price, product.price)) return false;
-        if (!Objects.equals(quantity, product.quantity)) return false;
-        if (!Objects.equals(createdAt.truncatedTo(ChronoUnit.MILLIS),
-                            product.createdAt.truncatedTo(ChronoUnit.MILLIS))) return false;
-        if (!Objects.equals(updatedAt.truncatedTo(ChronoUnit.MILLIS),
-                            product.updatedAt.truncatedTo(ChronoUnit.MILLIS))) return false;
-        if (!Objects.equals(createdBy, product.createdBy)) return false;
-        return Objects.equals(updatedBy, product.updatedBy);
+        return Objects.equals(getId(), product.getId())
+                && Objects.equals(getProductName(), product.getProductName())
+                && Objects.equals(getDescription(), product.getDescription())
+                && Objects.equals(getPrice(), product.getPrice())
+                && Objects.equals(getQuantity(), product.getQuantity())
+                && Objects.equals(getCreatedAt(), product.getCreatedAt())
+                && Objects.equals(getUpdatedAt(), product.getUpdatedAt())
+                && Objects.equals(getCreatedBy(), product.getCreatedBy())
+                && Objects.equals(getUpdatedBy(), product.getUpdatedBy());
     }
 
     @Override
