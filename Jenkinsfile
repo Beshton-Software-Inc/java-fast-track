@@ -13,7 +13,7 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                'nohup ./mvnw spring-boot:run &'
+                sh 'nohup ./mvnw spring-boot:run &'
             }
         }
     }
