@@ -12,8 +12,11 @@ pipeline {
             }
         }
         stage('Deploy') {
-            steps {
-                sh 'nohup ./mvnw spring-boot:run &'
+            script {
+                sh '''
+                    nohup ./mvnw spring-boot:run &
+                    echo "Captured PID: $!"
+                '''
             }
         }
     }
