@@ -23,7 +23,7 @@ pipeline {
         }
         stage('Run New Docker Container') {
             steps {
-                sh 'docker run --name shopping-app -p 8080:8080 -d springboot-shopping'
+                sh 'docker run --rm --name shopping-app -p 8080:8080 -d springboot-shopping'
             }
         }
     }
