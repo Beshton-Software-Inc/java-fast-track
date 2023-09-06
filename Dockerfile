@@ -7,13 +7,7 @@
 # Ref: https://www.docker.com/blog/kickstart-your-spring-boot-application-development/
 
 FROM eclipse-temurin:17-jdk-focal
-
 WORKDIR /app
-
-COPY .mvn/ .mvn
-COPY mvnw pom.xml ./
-RUN ./mvnw dependency:go-offline
-
-COPY src ./src
-
-CMD ["./mvnw", "spring-boot:run"]
+COPY target/*.jar /app/app.jar
+EXPOSE 8080
+CMD ["java", "-jar", "/app/app.jar"]
