@@ -16,9 +16,14 @@ pipeline {
                 sh 'docker build -t springboot-shopping .'
             }
         }
-        stage('Run Docker Container') {
+        state('Stop Old Container') {
             steps {
-                sh 'docker run -p 8080:8080 -d springboot-shopping'
+                sh 'docker stop shopping-app || true'
+            }
+        }
+        stage('Run New Docker Container') {
+            steps {
+                sh 'docker run --name shopping-app -p 8080:8080 -d springboot-shopping'
             }
         }
     }
