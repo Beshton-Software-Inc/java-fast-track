@@ -16,7 +16,7 @@ pipeline {
                 sh 'docker build -t springboot-shopping .'
             }
         }
-        state('Stop Old Container') {
+        stage('Stop Old Container') {
             steps {
                 sh 'docker stop shopping-app || true'
             }
