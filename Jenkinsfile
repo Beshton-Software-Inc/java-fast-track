@@ -16,14 +16,9 @@ pipeline {
                 sh 'docker build -t shopping .'
             }
         }
-        stage('Stop Old Docker Container') {
+        state('Kubernetes Deployment') {
             steps {
-                sh 'docker stop $(docker ps -aq --filter label=jenkins-controlled)'
-            }
-        }
-        stage('Run New Docker Container') {
-            steps {
-                sh 'docker run --label=jenkins-controlled -p 8080:8080 -d shopping'
+                sh 'kubectl apply -f KubernetesFile.yaml'
             }
         }
     }
