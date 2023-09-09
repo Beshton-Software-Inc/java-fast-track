@@ -13,7 +13,7 @@ pipeline {
         }
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t springboot-shopping .'
+                sh 'docker build -t shopping .'
             }
         }
         stage('Stop Old Docker Container') {
@@ -23,7 +23,7 @@ pipeline {
         }
         stage('Run New Docker Container') {
             steps {
-                sh 'docker run --label=jenkins-controlled -p 8080:8080 -d springboot-shopping'
+                sh 'docker run --label=jenkins-controlled -p 8080:8080 -d shopping'
             }
         }
     }
