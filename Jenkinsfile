@@ -18,6 +18,7 @@ pipeline {
         }
         stage('Kubernetes Deployment') {
             steps {
+                sh 'minikube image load shopping'
                 sh 'kubectl apply -f KubernetesFile.yaml'
             }
         }
