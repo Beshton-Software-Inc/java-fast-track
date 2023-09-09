@@ -16,7 +16,7 @@ pipeline {
                 sh 'docker build -t shopping .'
             }
         }
-        state('Kubernetes Deployment') {
+        stage('Kubernetes Deployment') {
             steps {
                 sh 'kubectl apply -f KubernetesFile.yaml'
             }
