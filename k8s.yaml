@@ -15,6 +15,7 @@ spec:
       containers:
         - name: shopping
           image: shopping
+          imagePullPolicy: Never
           ports:
             - containerPort: 8080
 

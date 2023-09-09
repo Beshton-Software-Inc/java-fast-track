@@ -13,13 +13,15 @@ pipeline {
         }
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t shopping .'
+                sh '''
+                    eval $(minikube docker-env)
+                    docker build -t shopping .
+                '''
             }
         }
         stage('Kubernetes Deployment') {
             steps {
-                sh 'minikube image load shopping'
-                sh 'kubectl apply -f KubernetesFile.yaml'
+                sh 'kubectl apply -f k8s.yaml'
             }
         }
     }
