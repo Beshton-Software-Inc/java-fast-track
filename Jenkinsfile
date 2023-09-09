@@ -13,15 +13,17 @@ pipeline {
         }
         stage('Build Docker Image') {
             steps {
-                sh '''
-                    eval $(minikube docker-env)
-                    docker build -t shopping .
-                '''
+                sh 'docker build -t springboot-shopping .'
             }
         }
-        stage('Kubernetes Deployment') {
+        stage('Stop Old Docker Container') {
             steps {
-                sh 'kubectl apply -f k8s.yaml'
+                sh 'docker stop $(docker ps -aq --filter label=jenkins-controlled)'
+            }
+        }
+        stage('Run New Docker Container') {
+            steps {
+                sh 'docker run --label=jenkins-controlled -p 8080:8080 -d springboot-shopping'
             }
         }
     }
