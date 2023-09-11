@@ -60,7 +60,6 @@
             <artifactId>spring-boot-starter-hateoas</artifactId>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -69,5 +68,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
