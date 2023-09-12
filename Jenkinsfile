@@ -18,12 +18,16 @@ pipeline {
         }
         stage('Stop Old Docker Container') {
             steps {
-                sh 'docker stop shopping-app || true'
+                sh 'docker stop $(docker ps -aq --filter label=jenkins-controlled)'
             }
         }
         stage('Run New Docker Container') {
             steps {
-                sh 'docker run --rm --name shopping-app -p 8080:8080 -d springboot-shopping'
+                sh '''
+                    docker run --label=jenkins-controlled \
+                    -e DB_IP=${DB_IP} -e DB_USERNAME=${DB_USERNAME} -e DB_PASSWORD=${DB_PASSWORD} \
+                    -p 8080:8080 -d springboot-shopping
+                '''
             }
         }
     }
