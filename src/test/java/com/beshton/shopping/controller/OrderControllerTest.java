@@ -20,6 +20,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class OrderControllerTest {
@@ -46,7 +47,8 @@ public class OrderControllerTest {
                 .setProductID("X2333")
                 .setQuantity(500)
                 .setPrice(new BigDecimal("123.44"))
-                .setShippingAddress("123 Where St");
+                .setShippingAddress("123 Where St")
+                .setStatus(Order.OrderStatus.PENDING);
     }
 
     private Order createAnotherTestOrder() {
@@ -55,16 +57,18 @@ public class OrderControllerTest {
                 .setProductID("Y666")
                 .setQuantity(700)
                 .setPrice(new BigDecimal("566.77"))
-                .setShippingAddress("258 What Ave");
+                .setShippingAddress("258 What Ave")
+                .setStatus(Order.OrderStatus.SHIPPED);
     }
 
-    private Order createInvalidOrder() {
+    private Order createCanceledOrder() {
         return new Order()
                 .setCustomerName("Wrong")
                 .setProductID("DELETE_ALL")
-                .setQuantity(-233)
-                .setPrice(new BigDecimal("-12345.6789"))
-                .setShippingAddress("TRAP");
+                .setQuantity(233)
+                .setPrice(new BigDecimal("12345.6789"))
+                .setShippingAddress("TRAP")
+                .setStatus(Order.OrderStatus.CANCELLED);
     }
 
 //    Order RECORD_1 = new Order("Gem", "X233", 6);
@@ -196,10 +200,30 @@ public class OrderControllerTest {
         assertNotNull(deleteNotFoundResponse.getBody());
     }
 
+
+
+    @Test
+    public void testCancelCancelledOrder() {
+        // Create a cancelled order
+        Order orderAlreadyCanceled = orderRepository.save(createCanceledOrder());
+
+        // Perform the cancel order request
+        ResponseEntity<String> response = restTemplate.exchange(
+                ordersURL() + "/" + orderAlreadyCanceled.getId() + "/cancel",
+                HttpMethod.PUT, null, String.class);
+
+        // Fetch the updated order from the repository
+        Order updatedOrder = orderRepository.findById(orderAlreadyCanceled.getId()).orElse(null);
+
+        // Verify the response and the order's status
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Order is already cancelled.", response.getBody());
+        assertEquals(Order.OrderStatus.CANCELLED, updatedOrder.getStatus());
+    }
     @Test
     public void testBadRequest() {
         // post invalid Order
-        Order invalidOrder = createInvalidOrder();
+        Order invalidOrder = createCanceledOrder();
         ResponseEntity<String> postResponse = restTemplate.postForEntity(ordersURL(), invalidOrder, String.class);
         assertEquals(HttpStatus.BAD_REQUEST, postResponse.getStatusCode());
         assertNotNull(postResponse.getBody());

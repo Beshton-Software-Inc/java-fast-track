@@ -1,7 +1,10 @@
 package com.beshton.shopping;
 
+import com.beshton.shopping.config.DataSeeder;
+import jakarta.annotation.PostConstruct;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -14,4 +17,5 @@ public class ShoppingApplication {
 
 		logger.info("Application started.");
 	}
+
 }

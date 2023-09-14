@@ -1,13 +1,22 @@
 # Use the official OpenJDK image as the base image
-FROM openjdk:17
+FROM eclipse-temurin:17-jdk-focal
 
 # Set the working directory in the container
+
 WORKDIR /app
 
-# Copy the built JAR file from the target directory into the container
-COPY target/springboot-crud-restful-webservices-0.0.1-SNAPSHOT.jar app.jar
-# Expose the port that your Spring Boot application listens on
-EXPOSE 8080
+COPY .mvn/ .mvn
+COPY mvnw pom.xml ./
+RUN ./mvnw dependency:go-offline
 
-# Command to run your Spring Boot application
-CMD ["java", "-jar", "app.jar"]
+COPY src ./src
+
+CMD ["./mvnw", "spring-boot:run"]
+
+# To build:
+# docker build -t springboot-shopping .
+# To run:
+# docker run -p HOST_PORT:CONTAINER_PORT -d springboot-shopping
+# e.g.: docker run -p 9090:8080 -d springboot-shopping
+# Note that Springboot's default port is 8080
+# Ref: https://www.docker.com/blog/kickstart-your-spring-boot-application-development/

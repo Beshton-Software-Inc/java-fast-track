@@ -31,6 +31,29 @@ public class Order {
     @Column(name = "shippingAddress", nullable = false)
     private String shippingAddress;
 
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status;
+
+    public enum OrderStatus {
+        PENDING("Pending"),
+        PROCESSING("Processing"),
+        SHIPPED("Shipped"),
+        DELIVERED("Delivered"),
+        CANCELLED("Cancelled");
+
+        // Constructor of new orderStatus
+        private final String displayName;
+
+        OrderStatus(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+    }
+
+
     public long getId() {
         return id;
     }
@@ -81,7 +104,16 @@ public class Order {
         return this;
     }
 
-@Override
+    public OrderStatus getStatus() {
+        return status;
+    }
+
+    public Order setStatus(OrderStatus status) {
+        this.status = status;
+        return this;
+    }
+
+    @Override
 public String toString() {
     return "Product{" +
             "id=" + id +
