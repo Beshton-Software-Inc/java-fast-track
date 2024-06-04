@@ -11,7 +11,11 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.beshton.shopping.service.S3Service;
+import com.beshton.shopping.service.ProductService;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -22,13 +26,18 @@ import java.util.Map;
 public class ProductController {
     private final ProductRepository productRepository;
     private final ProductModelAssembler productModelAssembler;
+    private final ProductService productService;
+    private final S3Service s3Service;
 
-    @Autowired
-    public ProductController(ProductRepository productRepository, ProductModelAssembler productModelAssembler) {
+    public ProductController(ProductRepository productRepository,
+                             ProductModelAssembler productModelAssembler,
+                             ProductService productService,
+                             S3Service s3Service) {
         this.productRepository = productRepository;
         this.productModelAssembler = productModelAssembler;
+        this.productService = productService;
+        this.s3Service = s3Service;
     }
-
     // Create
     @PostMapping
     public ResponseEntity<EntityModel<Product>> createProduct(@Valid @RequestBody Product product) {
@@ -86,5 +95,22 @@ public class ProductController {
                 .orElseThrow(() -> new ProductNotFoundException("Product not found on :: " + productId));
         productRepository.delete(product);
         return ResponseEntity.ok(Collections.singletonMap("deleted", Boolean.TRUE));
+    }
+
+    // Upload product file to S3
+    @PostMapping("/{id}/upload")
+    public ResponseEntity<String> uploadProductFile(@PathVariable Long id,
+                                                    @RequestParam("bucketName") String bucketName,
+                                                    @RequestParam("key") String key) throws IOException, ProductNotFoundException {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found on :: " + id));
+
+        // 生成包含Product信息的文件
+        File productFile = productService.generateProductFile(product);
+
+        // 上传文件到S3
+        s3Service.uploadFile(bucketName, key, productFile);
+
+        return ResponseEntity.ok("文件上传并产品信息保存成功。");
     }
 }
