@@ -10,7 +10,7 @@ public class AuditorAwareImpl implements AuditorAware<String> {
 
     @Override
     public Optional<String> getCurrentAuditor() {
-        // 返回当前用户的用户名，示例中返回固定的用户名
+        // return the current userName
         return Optional.of("system");
     }
 }

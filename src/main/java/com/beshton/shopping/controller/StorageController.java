@@ -19,13 +19,13 @@ public class StorageController {
                              @RequestParam("filePath") String filePath) {
         File file = new File(filePath);
         s3Service.uploadFile(bucketName, key, file);
-        return "文件上传成功。";
+        return "Successfully uploaded file " + filePath + " to bucket " + bucketName;
     }
 
     @DeleteMapping("/delete")
     public String deleteFile(@RequestParam("bucketName") String bucketName,
                              @RequestParam("key") String key) {
         s3Service.deleteFile(bucketName, key);
-        return "文件删除成功。";
+        return "Successfully deleted file " + key + " from bucket " + bucketName;
     }
 }

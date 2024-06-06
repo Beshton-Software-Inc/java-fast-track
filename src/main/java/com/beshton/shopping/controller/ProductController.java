@@ -16,13 +16,14 @@ import com.beshton.shopping.service.ProductService;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/products")
 public class ProductController {
     private final ProductRepository productRepository;
     private final ProductModelAssembler productModelAssembler;
@@ -98,19 +99,46 @@ public class ProductController {
     }
 
     // Upload product file to S3
-    @PostMapping("/{id}/upload")
-    public ResponseEntity<String> uploadProductFile(@PathVariable Long id,
-                                                    @RequestParam("bucketName") String bucketName,
-                                                    @RequestParam("key") String key) throws IOException, ProductNotFoundException {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ProductNotFoundException("Product not found on :: " + id));
+    @PostMapping("/upload")
+    public ResponseEntity<String> uploadProductFile(@RequestParam("bucketName") String bucketName,
+                                                    @RequestParam("key") String key,
+                                                    @RequestParam("productName") String productName,
+                                                    @RequestParam("description") String description,
+                                                    @RequestParam("price") Double price,
+                                                    @RequestParam("quantity") Integer quantity) throws IOException {
+        // create Product and save
+        Product product = new Product();
+        product.setProductName(productName);
+        product.setDescription(description);
+        product.setPrice(BigDecimal.valueOf(price));
+        product.setQuantity(quantity);
+        product.setCreatedAt(LocalDateTime.now());
+        product.setUpdatedAt(LocalDateTime.now());
+        product.setCreatedBy("system");
+        product.setUpdatedBy("system");
 
-        // 生成包含Product信息的文件
-        File productFile = productService.generateProductFile(product);
+        Product savedProduct = productRepository.save(product);
 
-        // 上传文件到S3
+        // create Product file
+        File productFile = productService.generateProductFile(savedProduct);
+
+        // upload to S3
         s3Service.uploadFile(bucketName, key, productFile);
 
-        return ResponseEntity.ok("文件上传并产品信息保存成功。");
+        return ResponseEntity.ok("Successfully uploaded product to S3.");
+    }
+
+    // Delete product file from S3
+    @DeleteMapping("/{id}/delete")
+    public ResponseEntity<String> deleteProductFile(@PathVariable Long id,
+                                                    @RequestParam("bucketName") String bucketName,
+                                                    @RequestParam("key") String key) throws ProductNotFoundException {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found on :: " + id));
+        // delete from S3
+        s3Service.deleteFile(bucketName, key);
+        // Delete customer from database
+        productService.deleteProductById(id);
+        return ResponseEntity.ok("Successfully deleted product from the S3.");
     }
 }

@@ -50,4 +50,7 @@ public class ProductService {
         }
         return file;
     }
+    public void deleteProductById(Long id) {
+        productRepository.deleteById(id);
+    }
 }
