@@ -1,34 +1,59 @@
 pipeline {
     agent any
+
+    environment {
+        DOCKER_REGISTRY = 'dkhw'
+        DOCKER_IMAGE = 'images'
+    }
+
     stages {
         stage('Checkout') {
             steps {
+                // Checks out the source code from GitHub
                 checkout scm
             }
         }
-        stage('Build and Test') {
+
+        stage('Build') {
             steps {
-                sh './mvnw clean install'
+                // Run Maven clean and install
+                script {
+                    sh './mvnw clean install'
+                }
             }
         }
-        stage('Build Docker Image') {
+
+        stage('Docker Build') {
             steps {
-                sh 'docker build -t springboot-shopping .'
+                // Build the Docker image
+                script {
+                    sh "docker build -t ${DOCKER_REGISTRY}/${DOCKER_IMAGE} ."
+                }
             }
         }
-        stage('Stop Old Docker Container') {
+
+        stage('Docker Push') {
             steps {
-                sh 'docker stop $(docker ps -aq --filter label=jenkins-controlled)'
+                // Push the Docker image to the registry
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-registry-credentials', usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASS')]) {
+                        sh "echo $REGISTRY_PASS | docker login -u $REGISTRY_USER --password-stdin"
+                        sh "docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}"
+                    }
+                }
             }
         }
-        stage('Run New Docker Container') {
-            steps {
-                sh '''
-                    docker run --label=jenkins-controlled \
-                    -e DB_IP=${DB_IP} -e DB_USERNAME=${DB_USERNAME} -e DB_PASSWORD=${DB_PASSWORD} \
-                    -p 8080:8080 -d springboot-shopping
-                '''
-            }
+    }
+
+    post {
+        always {
+            echo 'post pipeline:'
+        }
+        success {
+            echo 'successful'
+        }
+        failure {
+            echo 'fail'
         }
     }
 }
