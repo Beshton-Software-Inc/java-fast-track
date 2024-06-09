@@ -1,13 +1,12 @@
-package com.beshton.shopping;
+package com.beshton.shopping.controller;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ShoppingApplicationTests {
+public class ShopApplicationTest {
 
     @Test
     void contextLoads() {
     }
-
 }
